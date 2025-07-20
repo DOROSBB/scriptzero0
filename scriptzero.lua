@@ -2,13 +2,12 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Crear GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "BrainrotMenu"
 ScreenGui.Parent = PlayerGui
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 250, 0, 300)
+Frame.Size = UDim2.new(0, 250, 0, 320)
 Frame.Position = UDim2.new(0.05, 0, 0.3, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Frame.BorderSizePixel = 0
@@ -18,7 +17,6 @@ local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 8)
 UICorner.Parent = Frame
 
--- Función para crear botones
 local function crearBoton(texto, y, callback)
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(0.9, 0, 0, 40)
@@ -35,36 +33,27 @@ local function crearBoton(texto, y, callback)
     corner.Parent = button
 
     button.MouseButton1Click:Connect(callback)
+    return button
 end
 
 local speed_on = false
 local jump_on = false
 
-crearBoton("Speed (Off)", 10, function()
+local speed_button = crearBoton("Speed (Off)", 10, function()
     speed_on = not speed_on
-    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    local humanoid = char:FindFirstChild("Humanoid")
-    if humanoid then
-        humanoid.WalkSpeed = speed_on and 50 or 16
-    end
-    -- Actualizar texto del botón
-    Frame:GetChildren()[2].Text = speed_on and "Speed (On)" or "Speed (Off)"
+    speed_button.Text = speed_on and "Speed (On)" or "Speed (Off)"
 end)
 
-crearBoton("Super Jump (Off)", 60, function()
+local jump_button = crearBoton("Super Jump (Off)", 60, function()
     jump_on = not jump_on
-    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    local humanoid = char:FindFirstChild("Humanoid")
-    if humanoid then
-        humanoid.JumpPower = jump_on and 120 or 50
-    end
-    Frame:GetChildren()[3].Text = jump_on and "Super Jump (On)" or "Super Jump (Off)"
+    jump_button.Text = jump_on and "Super Jump (On)" or "Super Jump (Off)"
 end)
 
-crearBoton("Teleport a Base", 110, function()
+crearBoton("Teleport a mi Base", 110, function()
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     if char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = CFrame.new(-114, 10, -25) -- Cambia por coordenadas base
+        -- Cambia estas coordenadas a las de TU base exacta
+        char.HumanoidRootPart.CFrame = CFrame.new(-200, 10, 300)
     end
 end)
 
@@ -72,12 +61,52 @@ crearBoton("Cerrar Menú", 160, function()
     ScreenGui:Destroy()
 end)
 
--- Auto aplicar speed y salto al reaparecer
+-- Mantener speed y salto activos
+spawn(function()
+    while true do
+        task.wait(0.5)
+        if speed_on then
+            local char = LocalPlayer.Character
+            if char then
+                local humanoid = char:FindFirstChild("Humanoid")
+                if humanoid and humanoid.WalkSpeed ~= 50 then
+                    humanoid.WalkSpeed = 50
+                end
+            end
+        else
+            local char = LocalPlayer.Character
+            if char then
+                local humanoid = char:FindFirstChild("Humanoid")
+                if humanoid and humanoid.WalkSpeed ~= 16 then
+                    humanoid.WalkSpeed = 16
+                end
+            end
+        end
+
+        if jump_on then
+            local char = LocalPlayer.Character
+            if char then
+                local humanoid = char:FindFirstChild("Humanoid")
+                if humanoid and humanoid.JumpPower ~= 120 then
+                    humanoid.JumpPower = 120
+                end
+            end
+        else
+            local char = LocalPlayer.Character
+            if char then
+                local humanoid = char:FindFirstChild("Humanoid")
+                if humanoid and humanoid.JumpPower ~= 50 then
+                    humanoid.JumpPower = 50
+                end
+            end
+        end
+    end
+end)
+
+-- Aplica al reaparecer
 LocalPlayer.CharacterAdded:Connect(function(char)
     task.wait(1)
     local humanoid = char:WaitForChild("Humanoid")
-    if humanoid then
-        humanoid.WalkSpeed = speed_on and 50 or 16
-        humanoid.JumpPower = jump_on and 120 or 50
-    end
+    humanoid.WalkSpeed = speed_on and 50 or 16
+    humanoid.JumpPower = jump_on and 120 or 50
 end)
