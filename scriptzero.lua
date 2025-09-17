@@ -1,14 +1,14 @@
--- Steal the Brainrots - TP Save Script (Delta Actualizado)
+-- Steal the Brainrots - TP Save Script Mejorado
 -- by ChatGPT / DOROSBB
 
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 local savedPos = nil
 local cooldown = false
 local cooldownTime = 1.2 -- segundos entre TPs
 
--- Helper para obtener HumanoidRootPart
+-- Función para obtener HumanoidRootPart
 local function getHRP(char)
     if char and char:FindFirstChild("HumanoidRootPart") then
         return char.HumanoidRootPart
@@ -39,7 +39,7 @@ frame.Parent = screenGui
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
-title.Text = "TP Save (Delta)"
+title.Text = "TP Save Mejorado"
 title.TextSize = 16
 title.Font = Enum.Font.SourceSansBold
 title.TextColor3 = Color3.fromRGB(255,255,255)
@@ -49,7 +49,7 @@ title.Parent = frame
 local function makeBtn(text, posY, color)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0, 200, 0, 36)
-    btn.Position = UDim2.new(0.05,0,0, posY)
+    btn.Position = UDim2.new(0.05,0,0,posY)
     btn.Text = text
     btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = 15
@@ -84,7 +84,7 @@ status.Font = Enum.Font.SourceSansItalic
 status.TextColor3 = Color3.fromRGB(200,200,200)
 status.Parent = frame
 
--- Drag para mover GUI
+-- Drag GUI
 local dragging, dragInput, dragStart, startPos
 frame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -103,7 +103,7 @@ frame.InputChanged:Connect(function(input)
         dragInput = input
     end
 end)
-UserInputService.InputChanged:Connect(function(input)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
     if dragging and input == dragInput then
         local delta = input.Position - dragStart
         frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
@@ -128,6 +128,16 @@ saveBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Función de TP con Tween (suave)
+local function doTeleport()
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = getHRP(char)
+    if not hrp then return end
+    local info = TweenInfo.new(0.4, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(hrp, info, {CFrame = savedPos})
+    tween:Play()
+end
+
 -- Teleport
 tpBtn.MouseButton1Click:Connect(function()
     if cooldown then
@@ -144,34 +154,21 @@ tpBtn.MouseButton1Click:Connect(function()
         status.Text = ""
         return
     end
+
     cooldown = true
     spawn(function() wait(cooldownTime) cooldown = false end)
+    doTeleport()
+end)
 
-    local char = player.Character or player.CharacterAdded:Wait()
+-- Auto-TP al reaparecer
+player.CharacterAdded:Connect(function(char)
+    wait(0.6)
     local hrp = getHRP(char)
-    local tries = 0
-    while not hrp and tries < 6 do
-        wait(0.4)
-        hrp = getHRP(player.Character)
-        tries = tries + 1
-    end
-    if hrp then
-        local ok,_ = pcall(function() hrp.CFrame = savedPos end)
-        if ok then
-            tpBtn.Text = "✅ Teleport"
-            status.Text = "Teletransportado!"
-            wait(1.2)
-            tpBtn.Text = "⚡ TP Guardado"
-            status.Text = ""
-        else
-            status.Text = "Error al TP"
-            wait(1.2)
-            status.Text = ""
-        end
-    else
-        status.Text = "HRP no encontrada"
-        wait(1.2)
-        status.Text = ""
+    if hrp and savedPos then
+        wait(0.1)
+        local info = TweenInfo.new(0.4, Enum.EasingStyle.Linear)
+        local tween = TweenService:Create(hrp, info, {CFrame = savedPos})
+        tween:Play()
     end
 end)
 
@@ -180,9 +177,4 @@ closeBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
 
--- Mantener savedPos tras respawn
-player.CharacterAdded:Connect(function(char)
-    wait(0.6)
-end)
-
-print("[TP Save] Script cargado correctamente.")
+print("[TP Save Mejorado] Script cargado correctamente.")
