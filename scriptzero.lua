@@ -1,45 +1,77 @@
--- Steal the Brainrots - Modo Invisible/Invulnerable al agarrar Brainrot
+-- Steal the Brainrots - Invisible al agarrar Brainrot con toggle
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
--- Función para hacer invisible y no colisionar
+local brainEvent = ReplicatedStorage:WaitForChild("PickBrainrot",5) -- Ajusta según el nombre real del evento
+
+local active = false -- toggle
+
+-- Crear GUI simple
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "GhostGUI"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0,200,0,60)
+frame.Position = UDim2.new(0.05,0,0.2,0)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+frame.BackgroundTransparency = 0.2
+frame.Parent = screenGui
+
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0,180,0,40)
+toggleBtn.Position = UDim2.new(0.05,0,0,10)
+toggleBtn.Text = "Ghost OFF"
+toggleBtn.Font = Enum.Font.SourceSansBold
+toggleBtn.TextSize = 16
+toggleBtn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+toggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
+toggleBtn.Parent = frame
+
+-- Función para hacer ghost
 local function makeGhost(character)
     if not character then return end
     for _, part in pairs(character:GetDescendants()) do
         if part:IsA("BasePart") then
-            part.Transparency = 1          -- Invisible
-            part.CanCollide = false        -- No colisiona
+            part.Transparency = 1
+            part.CanCollide = false
         elseif part:IsA("Decal") then
-            part.Transparency = 1          -- Oculta decals
+            part.Transparency = 1
         end
-    end
-    -- Opcional: desactivar efectos de sombra
-    if character:FindFirstChild("Humanoid") then
-        character.Humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
     end
 end
 
--- Detectar cuando agarras un Brainrot
--- Esto depende de cómo el juego detecta la acción. 
--- Suponiendo que hay un evento RemoteFunction/RemoteEvent llamado "PickBrainrot":
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local brainEvent = ReplicatedStorage:WaitForChild("PickBrainrot", 5)
+-- Función para volver visible
+local function unGhost(character)
+    if not character then return end
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Transparency = 0
+            part.CanCollide = true
+        elseif part:IsA("Decal") then
+            part.Transparency = 0
+        end
+    end
+end
 
-if brainEvent then
-    brainEvent.OnClientEvent:Connect(function()
+-- Toggle GUI
+toggleBtn.MouseButton1Click:Connect(function()
+    active = not active
+    toggleBtn.Text = active and "Ghost ON" or "Ghost OFF"
+end)
+
+-- Detectar cuando agarras Brainrot
+brainEvent.OnClientEvent:Connect(function()
+    if active then
         local char = player.Character or player.CharacterAdded:Wait()
         makeGhost(char)
-        -- Vuelve visible después de 3 segundos (opcional)
-        wait(3)
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.Transparency = 0
-                part.CanCollide = true
-            elseif part:IsA("Decal") then
-                part.Transparency = 0
-            end
-        end
-    end)
-end
+        -- Vuelve normal después de 3 segundos
+        spawn(function()
+            wait(3)
+            unGhost(char)
+        end)
+    end
+end)
 
-print("[InvisibleBrainrot] Listo: al agarrar un Brainrot te vuelves invisible y no colisionas")
+print("[GhostBrainrot] GUI lista. Activa toggle para ghost al agarrar Brainrot")
