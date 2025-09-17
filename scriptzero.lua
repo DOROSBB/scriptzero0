@@ -1,13 +1,14 @@
--- Steal the Brainrots - TP Save Script para Delta (mejorado)
--- Pega en Delta Executor mientras estás dentro del juego
+-- Steal the Brainrots - TP Save Script (Delta Actualizado)
+-- by ChatGPT / DOROSBB
 
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local savedPos = nil
 local cooldown = false
 local cooldownTime = 1.2 -- segundos entre TPs
 
--- Helper: obtener HumanoidRootPart (espera si no existe aún)
+-- Helper para obtener HumanoidRootPart
 local function getHRP(char)
     if char and char:FindFirstChild("HumanoidRootPart") then
         return char.HumanoidRootPart
@@ -19,22 +20,22 @@ end
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TPGui"
 screenGui.ResetOnSpawn = false
--- Intenta CoreGui (Delta suele permitirlo); si falla, usa PlayerGui
 local ok, err = pcall(function() screenGui.Parent = game.CoreGui end)
 if not ok then
     screenGui.Parent = player:WaitForChild("PlayerGui")
 end
 
--- Panel contenedor (para mover)
+-- Panel
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 210, 0, 150)
-frame.Position = UDim2.new(0.05, 0, 0.22, 0)
+frame.Size = UDim2.new(0, 220, 0, 160)
+frame.Position = UDim2.new(0.05,0,0.2,0)
 frame.BackgroundTransparency = 0.15
 frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 frame.BorderSizePixel = 0
-frame.Parent = screenGui
 frame.Active = true
+frame.Parent = screenGui
 
+-- Título
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
@@ -44,36 +45,38 @@ title.Font = Enum.Font.SourceSansBold
 title.TextColor3 = Color3.fromRGB(255,255,255)
 title.Parent = frame
 
--- Botones
-local function makeBtn(text, posY)
-    local b = Instance.new("TextButton")
-    b.Size = UDim2.new(0, 180, 0, 36)
-    b.Position = UDim2.new(0.05, 0, 0, posY)
-    b.Text = text
-    b.Font = Enum.Font.SourceSans
-    b.TextSize = 15
-    b.Parent = frame
-    b.BorderSizePixel = 0
-    b.BackgroundTransparency = 0.08
-    return b
+-- Crear botones
+local function makeBtn(text, posY, color)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 200, 0, 36)
+    btn.Position = UDim2.new(0.05,0,0, posY)
+    btn.Text = text
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 15
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.BackgroundColor3 = color
+    btn.Parent = frame
+    btn.BorderSizePixel = 0
+    btn.BackgroundTransparency = 0.1
+    return btn
 end
 
-local saveBtn = makeBtn("📍 Guardar Posición", 36)
-local tpBtn   = makeBtn("⚡ TP Guardado", 76)
+local saveBtn = makeBtn("📍 Guardar Posición", 36, Color3.fromRGB(0,170,255))
+local tpBtn   = makeBtn("⚡ TP Guardado", 76, Color3.fromRGB(0,200,0))
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 36, 0, 24)
-closeBtn.Position = UDim2.new(1, -42, 0, 4)
+closeBtn.Size = UDim2.new(0,36,0,24)
+closeBtn.Position = UDim2.new(1,-42,0,4)
 closeBtn.Text = "X"
 closeBtn.Font = Enum.Font.SourceSansBold
 closeBtn.TextSize = 14
-closeBtn.Parent = frame
 closeBtn.BackgroundTransparency = 0.3
 closeBtn.BorderSizePixel = 0
+closeBtn.Parent = frame
 
--- Mensaje de estado
+-- Estado
 local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1, -10, 0, 20)
-status.Position = UDim2.new(0, 5, 1, -28)
+status.Size = UDim2.new(1,-10,0,20)
+status.Position = UDim2.new(0,5,1,-28)
 status.BackgroundTransparency = 1
 status.Text = ""
 status.TextSize = 14
@@ -81,7 +84,7 @@ status.Font = Enum.Font.SourceSansItalic
 status.TextColor3 = Color3.fromRGB(200,200,200)
 status.Parent = frame
 
--- Drag del frame (para mover en pantalla)
+-- Drag para mover GUI
 local dragging, dragInput, dragStart, startPos
 frame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -100,32 +103,32 @@ frame.InputChanged:Connect(function(input)
         dragInput = input
     end
 end)
-game:GetService("UserInputService").InputChanged:Connect(function(input)
+UserInputService.InputChanged:Connect(function(input)
     if dragging and input == dragInput then
         local delta = input.Position - dragStart
         frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
--- Guardar posición
+-- Guardar Posición
 saveBtn.MouseButton1Click:Connect(function()
     local char = player.Character or player.CharacterAdded:Wait()
     local hrp = getHRP(char)
     if hrp then
         savedPos = hrp.CFrame
-        status.Text = "Posición guardada ✅"
         saveBtn.Text = "✅ Guardada"
+        status.Text = "Posición guardada!"
         wait(1.2)
         saveBtn.Text = "📍 Guardar Posición"
         status.Text = ""
     else
-        status.Text = "No se encontró HumanoidRootPart"
+        status.Text = "HRP no encontrada"
         wait(1.2)
         status.Text = ""
     end
 end)
 
--- Teletransportar con manejo de respawn y cooldown
+-- Teleport
 tpBtn.MouseButton1Click:Connect(function()
     if cooldown then
         status.Text = "En cooldown..."
@@ -141,20 +144,10 @@ tpBtn.MouseButton1Click:Connect(function()
         status.Text = ""
         return
     end
-
     cooldown = true
-    spawn(function()
-        wait(cooldownTime)
-        cooldown = false
-    end)
+    spawn(function() wait(cooldownTime) cooldown = false end)
 
-    -- Si el personaje no existe ahora, espera a que reaparezca y luego TP
-    local char = player.Character
-    if not char then
-        status.Text = "Esperando respawn..."
-        char = player.CharacterAdded:Wait()
-    end
-
+    local char = player.Character or player.CharacterAdded:Wait()
     local hrp = getHRP(char)
     local tries = 0
     while not hrp and tries < 6 do
@@ -162,24 +155,21 @@ tpBtn.MouseButton1Click:Connect(function()
         hrp = getHRP(player.Character)
         tries = tries + 1
     end
-
     if hrp then
-        local ok, e = pcall(function()
-            hrp.CFrame = savedPos
-        end)
+        local ok,_ = pcall(function() hrp.CFrame = savedPos end)
         if ok then
-            status.Text = "Teletransportado ✅"
-            tpBtn.Text = "✅ Teletransportado"
+            tpBtn.Text = "✅ Teleport"
+            status.Text = "Teletransportado!"
             wait(1.2)
             tpBtn.Text = "⚡ TP Guardado"
             status.Text = ""
         else
-            status.Text = "Error al TP: "..tostring(e)
-            wait(1.4)
+            status.Text = "Error al TP"
+            wait(1.2)
             status.Text = ""
         end
     else
-        status.Text = "No se encontró HRP para TP"
+        status.Text = "HRP no encontrada"
         wait(1.2)
         status.Text = ""
     end
@@ -190,14 +180,9 @@ closeBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
 
--- Mantener savedPos si reapareces (no se borra)
+-- Mantener savedPos tras respawn
 player.CharacterAdded:Connect(function(char)
     wait(0.6)
-    -- opcional: podrías auto-teleportear si quieres, pero no lo hago para evitar riesgos
-    -- si deseas auto-TP, descomenta lo siguiente (no recomendado en la mayoría de casos):
-    -- if savedPos and char:FindFirstChild("HumanoidRootPart") then
-    --    char.HumanoidRootPart.CFrame = savedPos
-    -- end
 end)
 
-print("[TPGui] Cargado - usa 'Guardar Posición' y luego 'TP Guardado'")
+print("[TP Save] Script cargado correctamente.")
