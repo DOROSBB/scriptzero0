@@ -1,37 +1,61 @@
--- Steal the Brainrots - Ghost Toggle Funcional
+-- Steal the Brainrots - Alerta Brainrots Valiosos + Ghost
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
--- Cambia esto al nombre correcto del evento del juego
-local brainEvent = ReplicatedStorage:WaitForChild("PickBrainrot",5) 
-
-local active = false -- toggle
+local ghostActive = false
 
 -- Crear GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "GhostGUI"
+screenGui.Name = "BrainrotAlertGUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0,200,0,60)
+frame.Size = UDim2.new(0,300,0,100)
 frame.Position = UDim2.new(0.05,0,0.2,0)
 frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-frame.BackgroundTransparency = 0.2
+frame.BackgroundTransparency = 0.15
 frame.Parent = screenGui
 
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0,180,0,40)
-toggleBtn.Position = UDim2.new(0.05,0,0,10)
-toggleBtn.Text = "Ghost OFF"
-toggleBtn.Font = Enum.Font.SourceSansBold
-toggleBtn.TextSize = 16
-toggleBtn.BackgroundColor3 = Color3.fromRGB(0,170,255)
-toggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
-toggleBtn.Parent = frame
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0,30)
+title.Position = UDim2.new(0,0,0,0)
+title.BackgroundTransparency = 1
+title.Text = "💰 Brainrots Valiosos"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 16
+title.Parent = frame
 
--- Función para hacer ghost
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Size = UDim2.new(1,-10,0,50)
+infoLabel.Position = UDim2.new(0,5,0,35)
+infoLabel.BackgroundTransparency = 1
+infoLabel.Text = "Esperando Brainrots..."
+infoLabel.TextColor3 = Color3.fromRGB(200,200,200)
+infoLabel.TextWrapped = true
+infoLabel.Font = Enum.Font.SourceSans
+infoLabel.TextSize = 14
+infoLabel.Parent = frame
+
+local ghostBtn = Instance.new("TextButton")
+ghostBtn.Size = UDim2.new(0,100,0,30)
+ghostBtn.Position = UDim2.new(0.5,-50,1,-35)
+ghostBtn.Text = "Ghost OFF"
+ghostBtn.Font = Enum.Font.SourceSansBold
+ghostBtn.TextSize = 14
+ghostBtn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+ghostBtn.TextColor3 = Color3.fromRGB(255,255,255)
+ghostBtn.Parent = frame
+
+-- Toggle Ghost
+ghostBtn.MouseButton1Click:Connect(function()
+    ghostActive = not ghostActive
+    ghostBtn.Text = ghostActive and "Ghost ON" or "Ghost OFF"
+end)
+
+-- Función Ghost
 local function makeGhost(character)
     if not character then return end
     for _, part in pairs(character:GetDescendants()) do
@@ -44,7 +68,6 @@ local function makeGhost(character)
     end
 end
 
--- Función para volver visible
 local function unGhost(character)
     if not character then return end
     for _, part in pairs(character:GetDescendants()) do
@@ -57,25 +80,37 @@ local function unGhost(character)
     end
 end
 
--- Toggle GUI
-toggleBtn.MouseButton1Click:Connect(function()
-    active = not active
-    toggleBtn.Text = active and "Ghost ON" or "Ghost OFF"
-end)
-
--- Detectar cuando agarras Brainrot
-if brainEvent then
-    brainEvent.OnClientEvent:Connect(function()
-        if active then
-            local char = player.Character or player.CharacterAdded:Wait()
-            makeGhost(char)
-            -- Volver visible después de 3 seg (opcional)
-            spawn(function()
-                wait(3)
-                unGhost(char)
-            end)
+-- Detectar Brainrots en el servidor
+local function scanBrainrots()
+    local workspaceObjs = workspace:GetDescendants()
+    for _, obj in pairs(workspaceObjs) do
+        if obj:IsA("Model") and obj:FindFirstChild("Value") and obj:FindFirstChild("Name") then
+            local value = obj.Value.Value
+            local name = obj.Name
+            if value >= 15000000 then -- Brainrot valioso ≥ 15 millones
+                infoLabel.Text = "💰 Nombre: "..name.."\nValor: "..value.." 💸"
+                if ghostActive then
+                    local char = player.Character or player.CharacterAdded:Wait()
+                    makeGhost(char)
+                end
+            end
         end
-    end)
+    end
 end
 
-print("[GhostBrainrot] GUI lista. Pulsa toggle para activar ghost al agarrar Brainrot")
+-- Repetir escaneo cada 1 segundo
+RunService.Heartbeat:Connect(function()
+    scanBrainrots()
+end)
+
+-- Al reaparecer, quitar ghost si está activo
+player.CharacterAdded:Connect(function(char)
+    wait(0.5)
+    if ghostActive then
+        makeGhost(char)
+    else
+        unGhost(char)
+    end
+end)
+
+print("[BrainrotAlert] Script cargado. Detecta Brainrots ≥ 15M y activa ghost si lo deseas.")
