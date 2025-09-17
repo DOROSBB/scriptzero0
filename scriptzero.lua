@@ -1,15 +1,17 @@
--- Steal the Brainrots - Invisible al agarrar Brainrot con toggle
+-- Steal the Brainrots - Ghost Toggle Funcional
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
-local brainEvent = ReplicatedStorage:WaitForChild("PickBrainrot",5) -- Ajusta según el nombre real del evento
+-- Cambia esto al nombre correcto del evento del juego
+local brainEvent = ReplicatedStorage:WaitForChild("PickBrainrot",5) 
 
 local active = false -- toggle
 
--- Crear GUI simple
+-- Crear GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "GhostGUI"
+screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
@@ -62,16 +64,18 @@ toggleBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Detectar cuando agarras Brainrot
-brainEvent.OnClientEvent:Connect(function()
-    if active then
-        local char = player.Character or player.CharacterAdded:Wait()
-        makeGhost(char)
-        -- Vuelve normal después de 3 segundos
-        spawn(function()
-            wait(3)
-            unGhost(char)
-        end)
-    end
-end)
+if brainEvent then
+    brainEvent.OnClientEvent:Connect(function()
+        if active then
+            local char = player.Character or player.CharacterAdded:Wait()
+            makeGhost(char)
+            -- Volver visible después de 3 seg (opcional)
+            spawn(function()
+                wait(3)
+                unGhost(char)
+            end)
+        end
+    end)
+end
 
-print("[GhostBrainrot] GUI lista. Activa toggle para ghost al agarrar Brainrot")
+print("[GhostBrainrot] GUI lista. Pulsa toggle para activar ghost al agarrar Brainrot")
